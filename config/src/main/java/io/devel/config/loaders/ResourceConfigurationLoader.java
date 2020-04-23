@@ -1,6 +1,8 @@
-package io.devel.config;
+package io.devel.config.loaders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.devel.config.ConfigContext;
+import io.devel.config.JacksonConfigContext;
 import io.devel.jackson.ObjectMappers;
 
 import java.io.File;
@@ -9,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-class ConfigurationFileLoader implements ConfigurationLoader {
+public class FileConfigurationLoader implements ConfigurationLoader {
     private final List<String> expectedFileNames = Arrays.asList(
             "application.json",
             "application.yaml",
