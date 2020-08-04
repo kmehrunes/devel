@@ -4,6 +4,7 @@ import io.devel.reflect.exceptions.NoImplementationFoundException;
 import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class ClassSearch {
 
         return implementations.stream()
                 .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
                 .findFirst()
                 .orElseThrow(() -> new NoImplementationFoundException("No class implementation was found for " + base.getSimpleName()));
     }
@@ -33,10 +35,11 @@ public class ClassSearch {
 
         return implementations.stream()
                 .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
                 .collect(Collectors.toSet());
     }
 
-    public <T> Set<Class<?>> findClassesByAnnotation(final Class<? extends Annotation> annotationClass) {
+    public Set<Class<?>> findClassesByAnnotation(final Class<? extends Annotation> annotationClass) {
         return reflections.getTypesAnnotatedWith(annotationClass);
     }
 }

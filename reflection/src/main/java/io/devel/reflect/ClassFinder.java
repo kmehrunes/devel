@@ -3,6 +3,8 @@ package io.devel.reflect;
 import io.devel.reflect.exceptions.ReflectException;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -25,7 +27,7 @@ public class ClassFinder {
         return new ClassFinder(classSearch);
     }
 
-    private ClassFinder extendsClass(final Class<?> superClass) {
+    public ClassFinder extendsClass(final Class<?> superClass) {
         if (superClasses.size() > 0) {
             throw new ReflectException("A class can't have more than one superclass");
         }
@@ -35,7 +37,7 @@ public class ClassFinder {
         return this;
     }
 
-    private ClassFinder implementsInterface(final Class<?> implementedInterface) {
+    public ClassFinder implementsInterface(final Class<?> implementedInterface) {
         if (!implementedInterface.isInterface()) {
             throw new ReflectException(implementedInterface.getName() + " isn't an interface");
         }
@@ -45,22 +47,34 @@ public class ClassFinder {
         return this;
     }
 
-    private ClassFinder annotatedWith(final Class<? extends Annotation> annotation) {
+    public ClassFinder annotatedWith(final Class<? extends Annotation> annotation) {
+        if (!annotation.isAnnotation()) {
+            throw new IllegalArgumentException("Class " + annotation.getSimpleName() + " is not an annotation");
+        }
+
+        final Retention retention = annotation.getAnnotation(Retention.class);
+
+        if (retention.value() != RetentionPolicy.RUNTIME) {
+            throw new IllegalArgumentException("Annotation " + annotation.getSimpleName() + " has retention "
+                    + retention.value() +". Only RUNTIME is allowed");
+        }
+
         annotationClasses.add(annotation);
 
         return this;
     }
 
-    private ClassFinder annotatedWith(final Annotation annotation) {
+    public ClassFinder annotatedWith(final Annotation annotation) {
         annotations.add(annotation);
 
         return this;
     }
 
     public Set<Class<?>> find() {
+        final Set<Class<?>> all = combineSuperAndInterfaces();
         Set<Class<?>> found = new HashSet<>();
 
-        for (final Class<?> superclass : combineSuperAndInterfaces()) {
+        for (final Class<?> superclass : all) {
             found = findOrFilterBySuperclass(superclass, found);
         }
 
@@ -98,7 +112,10 @@ public class ClassFinder {
             return classSearch.findClassesByAnnotation(annotation);
         } else {
             return previous.stream()
-                    .filter(clazz -> clazz.getAnnotation(annotation) != null)
+                    .filter(clazz -> {
+                        final Annotation[] annotations = clazz.getAnnotationsByType(annotation);
+                        return annotations.length > 0;
+                    })
                     .collect(Collectors.toSet());
         }
     }
